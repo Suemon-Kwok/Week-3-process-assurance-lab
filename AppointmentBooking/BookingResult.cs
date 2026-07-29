@@ -1,35 +1,44 @@
-﻿namespace ENSE707_AppointmentBooking
+using System;
+
+namespace ENSE707_AppointmentBooking
 {
+    // This class was referenced by AppointmentBookingService and its tests
+    // (result.Success, result.Message) but was missing from the project -
+    // recreated here so the solution compiles again.
     public class BookingResult
     {
-        // Read-only after construction - a booking result represents a
-        // single outcome that happened at one point in time. Nothing
-        // should be able to change a result after it's been created and
-        // returned to the caller.
+        // Whether the booking (or cancellation) attempt succeeded.
+        // Read-only after construction - a result shouldn't be able to
+        // change its own outcome after the fact.
         public bool Success { get; }
 
-        // The human-readable explanation of what happened and why. This
-        // exists specifically to fix the original design flaw noted in
-        // the lab: the old BookAppointment() returned a plain bool, so
-        // callers knew booking failed but had NO idea why (no slots?
-        // invalid request? something else?). Bundling a Message alongside
-        // Success means the caller always gets both the outcome AND the
-        // reasoning in one object.
+        // A human-readable explanation of what happened and, on failure,
+        // why - matches the existing messages already written in
+        // AppointmentBookingService (e.g. "no available slots").
         public string Message { get; }
 
-        // The constructor takes both pieces of information together so
-        // it's impossible to create a BookingResult that's missing an
-        // explanation - Success and Message are always set as a pair.
-        public BookingResult(bool success, string message)
+        // NEW for Step 7: carries the Appointment that was created when
+        // a booking succeeds, so callers don't have to separately
+        // reconstruct it. Nullable (defaults to null) so every existing
+        // call site like "new BookingResult(false, \"...\")" still
+        // compiles unchanged - we only pass an Appointment where one
+        // actually exists (a successful booking).
+        public Appointment? Appointment { get; }
+
+        // appointment defaults to null so this constructor is backward
+        // compatible with every existing 2-argument call in the codebase
+        // (all the failure-path returns), while still allowing a 3rd
+        // argument to be passed where a booking actually succeeds.
+        public BookingResult(bool success, string message, Appointment? appointment = null)
         {
+            // No validation guard on 'message' being empty here, because
+            // failure/success messages are always supplied as literal
+            // strings by the service itself, not by external/untrusted
+            // input - keeping this constructor simple matches how it's
+            // already used throughout AppointmentBookingService.
             Success = success;
             Message = message;
-
-            // Note: unlike Doctor/Patient, there's no validation here
-            // rejecting an empty message. That's a deliberate simplification
-            // for this lab - in a production system you might still want
-            // to guard against a null/blank message so failures are never
-            // silently unexplained.
+            Appointment = appointment;
         }
     }
 }
